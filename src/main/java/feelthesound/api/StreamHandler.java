@@ -18,13 +18,14 @@ public class StreamHandler extends BinaryWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws FileNotFoundException {
         session.setBinaryMessageSizeLimit(1000000);
-        log.debug("Connected streamer '{}'", ListenerRegistry.getIdentifier(session));
+        registry.registerStreamer(session);
+        log.debug("Connected streamer '{}'", ListenerRegistry.getSubscriberId(session));
     }
 
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        String identifier = ListenerRegistry.getIdentifier(session);
-        registry.sendMessage(identifier, message);
+        String subscriberId = ListenerRegistry.getSubscriberId(session);
+        registry.sendMessage(subscriberId, message);
     }
 
     @Override
@@ -36,6 +37,7 @@ public class StreamHandler extends BinaryWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         super.afterConnectionClosed(session, status);
-        log.debug("Disconnected streamer '{}'", ListenerRegistry.getIdentifier(session));
+        registry.removeStreamer(session);
+        log.debug("Disconnected streamer '{}'", ListenerRegistry.getSubscriberId(session));
     }
 }

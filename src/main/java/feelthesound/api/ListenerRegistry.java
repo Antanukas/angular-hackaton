@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -21,12 +22,35 @@ import static java.util.stream.Stream.of;
 @Component
 public class ListenerRegistry {
 
-    public final Map<String, List<WebSocketSession>> REGISTRY = new ConcurrentHashMap<>();
+    public final Map<String, WebSocketSession> streamers = new ConcurrentHashMap<>();
+    public final Map<String, List<WebSocketSession>> listenerRegistry = new ConcurrentHashMap<>();
 
-    public void register(WebSocketSession session) {
-        String identifier = ListenerRegistry.getIdentifier(session);
+
+    public Optional<WebSocketSession> getStreamer(String subscriberId) {
+        return Optional.ofNullable(streamers.get(subscriberId));
+    }
+
+    public void registerStreamer(WebSocketSession session) {
+        streamers.compute(ListenerRegistry.getSubscriberId(session), (key, oldValue) -> {
+            if (oldValue != null) {
+                try {
+                    oldValue.close();
+                } catch (IOException e) {
+                    log.warn("Failed to close old websocket", e);
+                }
+            }
+            return session;
+        });
+    }
+
+    public void removeStreamer(WebSocketSession session) {
+        streamers.remove(getSubscriberId(session));
+    }
+
+    public void registerListener(WebSocketSession session) {
+        String subscriberId = ListenerRegistry.getSubscriberId(session);
         if (session.isOpen()) {
-            REGISTRY.compute(identifier, (key, oldValue) -> {
+            listenerRegistry.compute(subscriberId, (key, oldValue) -> {
                 if (oldValue == null) {
                     return listOf(session);
                 } else {
@@ -37,34 +61,29 @@ public class ListenerRegistry {
     }
 
     public void removeClosed() {
-        REGISTRY.keySet().forEach(identifier -> {
-            REGISTRY.computeIfPresent(identifier, (key, oldValue) ->
+        listenerRegistry.keySet().forEach(subscriberId -> {
+            listenerRegistry.computeIfPresent(subscriberId, (key, oldValue) ->
                     oldValue.stream().filter(s -> s.isOpen()).collect(Collectors.toList()));
         });
     }
 
-    public List<WebSocketSession> removeByIdentifer(String identifier) {
-        List<WebSocketSession> removed = REGISTRY.remove(identifier);
-        return removed == null ? Collections.emptyList() : removed;
+    public List<WebSocketSession> getListeners(String subscriberId) {
+        return listenerRegistry.getOrDefault(subscriberId, Collections.emptyList());
     }
 
-    public List<WebSocketSession> getSessions(String identifier) {
-        return REGISTRY.getOrDefault(identifier, Collections.emptyList());
-    }
-
-    public void sendMessage(String identifier, WebSocketMessage<?> message) throws IOException {
-        getSessions(identifier).forEach(s -> {
+    public void sendMessage(String subscriberId, WebSocketMessage<?> message) throws IOException {
+        getListeners(subscriberId).forEach(s -> {
             try {
                 if (s.isOpen()) {
                     s.sendMessage(message);
                 }
             } catch (IOException e) {
-                log.warn("Could not dispage audio message to listeners.", e);
+                log.warn("Could not dispatch audio message to listeners.", e);
             }
         });
     }
 
-    public static String getIdentifier(WebSocketSession session) {
+    public static String getSubscriberId(WebSocketSession session) {
         String[] pathParts = session.getUri().toString().split("/");
         String id = pathParts[pathParts.length - 1];
         return id;

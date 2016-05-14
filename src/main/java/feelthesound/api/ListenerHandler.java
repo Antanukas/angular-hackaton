@@ -18,8 +18,8 @@ public class ListenerHandler extends BinaryWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws FileNotFoundException {
         session.setBinaryMessageSizeLimit(1000000);
-        registry.register(session);
-        log.debug("Connected listener '{}'", ListenerRegistry.getIdentifier(session));
+        registry.registerListener(session);
+        log.debug("Connected listener '{}'", ListenerRegistry.getSubscriberId(session));
     }
 
     @Override
@@ -37,6 +37,6 @@ public class ListenerHandler extends BinaryWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         super.afterConnectionClosed(session, status);
         registry.removeClosed();
-        log.debug("Disconnected listener '{}'", ListenerRegistry.getIdentifier(session));
+        log.debug("Disconnected listener '{}'", ListenerRegistry.getSubscriberId(session));
     }
 }

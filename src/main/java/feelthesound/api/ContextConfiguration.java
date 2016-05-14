@@ -17,8 +17,8 @@ public class ContextConfiguration extends SpringBootServletInitializer
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(streamHandler(), "/streams/{identifier}").setAllowedOrigins("*");
-        registry.addHandler(listenerHandler(), "/listeners/{identifier}").setAllowedOrigins("*");
+        registry.addHandler(streamHandler(), "/streams/{subscriberId}").setAllowedOrigins("*");
+        registry.addHandler(listenerHandler(), "/listeners/{subscriberId}").setAllowedOrigins("*");
     }
 
     @Bean
