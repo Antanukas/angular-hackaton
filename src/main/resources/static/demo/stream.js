@@ -6,7 +6,8 @@ var ended = true;
 
 function start() {
     ended = false;
-    websocket = new WebSocket('ws://localhost:8080/streams/testStream');
+    websocket = new WebSocket('wss://stark-river-37161.herokuapp.com/streams/testStream');
+    //websocket = new WebSocket('ws://localhost:8080/streams/testStream');
     websocket.binaryType = "arraybuffer";
     websocket.onopen = init;
 }

@@ -4,7 +4,9 @@ window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 function start() {
     ended = false;
-    websocket = new WebSocket('ws://localhost:8080/listeners/testStream');
+
+    websocket = new WebSocket('wss://stark-river-37161.herokuapp.com/listeners/testStream');
+    //websocket = new WebSocket('ws://localhost:8080/listeners/testStream');
     websocket.binaryType = "arraybuffer";
     websocket.onmessage = function(event) {
         console.log('receiving', event.data);
