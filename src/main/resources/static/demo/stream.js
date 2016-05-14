@@ -6,7 +6,7 @@ var ended = true;
 
 function start() {
     ended = false;
-    websocket = new WebSocket('ws://localhost:8080/hello');
+    websocket = new WebSocket('ws://localhost:8080/streams/testStream');
     websocket.binaryType = "arraybuffer";
     websocket.onopen = init;
 }

@@ -1,4 +1,4 @@
-package com.example;
+package feelthesound.api;
 
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
@@ -14,8 +14,8 @@ public class WebSocketConfig extends SpringBootServletInitializer
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(streamHandler(), "/hello");
-        registry.addHandler(listenerHandler(), "/listen");
+        registry.addHandler(streamHandler(), "/streams/{identifier}");
+        registry.addHandler(listenerHandler(), "/listeners/{identifier}");
     }
 
     @Bean

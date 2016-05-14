@@ -1,52 +1,58 @@
-package com.example;
+package feelthesound.api;
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
+import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.BinaryWebSocketHandler;
 
 @Slf4j
-public class ListenerHandler extends BinaryWebSocketHandler {
+public class StreamHandler extends BinaryWebSocketHandler {
 
-    private static volatile WebSocketSession session = null;
+    @Autowired
+    private ListenerRegistry registry;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws FileNotFoundException {
-        this.session = session;
         session.setBinaryMessageSizeLimit(1000000);
-        log.info("Opened new session in instance " + this);
+        log.debug("Connected streamer '{}'", ListenerRegistry.getIdentifier(session));
     }
 
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        //
-    }
-
-    public static void sendMessage(WebSocketMessage<?> message) throws IOException {
-        if (session != null) {
-            session.sendMessage(message);
-        }
+        String identifier = ListenerRegistry.getIdentifier(session);
+        registry.sendMessage(identifier, message);
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         log.error("Error", exception);
         session.close(CloseStatus.SERVER_ERROR);
+        disconnectListeners(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         super.afterConnectionClosed(session, status);
-        log.info("Closed");
+        disconnectListeners(session);
+        log.debug("Disconnected streamer '{}'", ListenerRegistry.getIdentifier(session));
     }
+
+    private void disconnectListeners(WebSocketSession session) {
+        List<WebSocketSession> removed = registry.removeByIdentifer(ListenerRegistry.getIdentifier(session));
+        removed.forEach(s -> {
+            try {
+                s.close();
+            } catch (IOException e) {
+                log.warn("Could not close listener websocket {}", s);
+            }
+        });
+    }
+
+
 }
