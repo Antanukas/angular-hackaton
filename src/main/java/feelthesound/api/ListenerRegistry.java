@@ -24,9 +24,9 @@ public class ListenerRegistry {
     public final Map<String, List<WebSocketSession>> REGISTRY = new ConcurrentHashMap<>();
 
     public void register(WebSocketSession session) {
-        String identifer = ListenerRegistry.getIdentifier(session);
+        String identifier = ListenerRegistry.getIdentifier(session);
         if (session.isOpen()) {
-            REGISTRY.compute(identifer, (key, oldValue) -> {
+            REGISTRY.compute(identifier, (key, oldValue) -> {
                 if (oldValue == null) {
                     return listOf(session);
                 } else {
@@ -44,7 +44,8 @@ public class ListenerRegistry {
     }
 
     public List<WebSocketSession> removeByIdentifer(String identifier) {
-        return REGISTRY.remove(identifier);
+        List<WebSocketSession> removed = REGISTRY.remove(identifier);
+        return removed == null ? Collections.emptyList() : removed;
     }
 
     public List<WebSocketSession> getSessions(String identifier) {
@@ -54,7 +55,9 @@ public class ListenerRegistry {
     public void sendMessage(String identifier, WebSocketMessage<?> message) throws IOException {
         getSessions(identifier).forEach(s -> {
             try {
-                s.sendMessage(message);
+                if (s.isOpen()) {
+                    s.sendMessage(message);
+                }
             } catch (IOException e) {
                 log.warn("Could not dispage audio message to listeners.", e);
             }

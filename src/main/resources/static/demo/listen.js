@@ -9,7 +9,7 @@ function start() {
     //websocket = new WebSocket('ws://localhost:8080/listeners/testStream');
     websocket.binaryType = "arraybuffer";
     websocket.onmessage = function(event) {
-        console.log('receiving', event.data);
+        console.log('receiving', new Float32Array(event.data));
         playSound(event.data);
     }
 }
